@@ -25,7 +25,7 @@ export class ArcanaConnector extends Connector {
     this.provider.on("connect", this.connectListener);
     this.provider.on("disconnect", this.disconnectListener);
     this.provider.on("chainChanged", this.chainChangedListener);
-    this.provider.on("accountsChanged", this.accountsChangedListener);
+    // this.provider.on("accountsChanged", this.accountsChangedListener);
   }
 
   private disconnectListener = (error: ProviderRpcError) => {
@@ -33,9 +33,14 @@ export class ArcanaConnector extends Connector {
     if (error) this.onError?.(error);
   };
 
-  private connectListener = ({ chainId }: ProviderConnectInfo): void => {
+  private connectListener = async ({
+    chainId,
+  }: ProviderConnectInfo): Promise<void> => {
     console.log("connected");
-    this.actions.update({ chainId: parseChainId(chainId) });
+    const accounts = (await this.provider?.request({
+      method: "eth_accounts",
+    })) as string[];
+    this.actions.update({ chainId: parseChainId(chainId), accounts });
   };
 
   private chainChangedListener = (chainId: string): void => {
@@ -74,10 +79,10 @@ export class ArcanaConnector extends Connector {
     await this.auth.logout();
     this.provider?.removeListener("disconnect", this.disconnectListener);
     this.provider?.removeListener("chainChanged", this.chainChangedListener);
-    this.provider?.removeListener(
-      "accountsChanged",
-      this.accountsChangedListener
-    );
+    // this.provider?.removeListener(
+    //   "accountsChanged",
+    //   this.accountsChangedListener
+    // );
     this.provider?.removeListener("connect", this.connectListener);
     this.actions.resetState();
   }
