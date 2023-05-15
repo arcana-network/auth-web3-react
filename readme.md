@@ -25,7 +25,6 @@ export const [authConnect, hooks] = initializeConnector(
   (actions) =>
     new ArcanaConnector(auth, {
       actions,
-      login
     })
 )
 ```
@@ -45,7 +44,10 @@ export const [authConnect, hooks] = initializeConnector(
   (actions) =>
     new ArcanaConnector(auth, {
       actions,
-      login // either add here or in setLogin function
+      login: {
+        provider: 'passwordless',
+        email: 'abc@example.com'
+      } // either add here or in setLogin function
     })
 )
 
