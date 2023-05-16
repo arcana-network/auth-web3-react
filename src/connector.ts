@@ -16,7 +16,7 @@ interface LoginType {
 }
 
 export class ArcanaConnector extends Connector {
-  readonly id = "arcana-auth";
+  readonly id = "arcana";
   readonly name = "Arcana Auth";
   private auth: AuthProvider;
   private login?: LoginType;
