@@ -10,22 +10,34 @@ import type { AuthProvider, EthereumProvider } from "@arcana/auth";
 function parseChainId(chainId: string | number) {
   return typeof chainId === "string" ? Number.parseInt(chainId, 16) : chainId;
 }
+interface LoginType {
+  provider: string;
+  email?: string;
+}
 
 export class ArcanaConnector extends Connector {
-  readonly id = "arcana-auth";
+  readonly id = "arcana";
   readonly name = "Arcana Auth";
   private auth: AuthProvider;
+  private login?: LoginType;
   public provider?: Provider;
 
-  constructor({ auth, actions }: { auth: AuthProvider; actions: Actions }) {
+  constructor(
+    auth: AuthProvider,
+    { actions, login }: { login?: LoginType; actions: Actions }
+  ) {
     super(actions);
     this.auth = auth;
     this.provider = this.auth.provider;
-
+    this.login = login;
     this.provider.on("connect", this.connectListener);
     this.provider.on("disconnect", this.disconnectListener);
     this.provider.on("chainChanged", this.chainChangedListener);
     // this.provider.on("accountsChanged", this.accountsChangedListener);
+  }
+
+  setLogin(login: LoginType) {
+    this.login = login;
   }
 
   private disconnectListener = (error: ProviderRpcError) => {
@@ -66,13 +78,29 @@ export class ArcanaConnector extends Connector {
   }
 
   async activate(): Promise<void> {
-    this.auth.connect().then((provider: EthereumProvider) => {
-      provider
-        .request({ method: "eth_requestAccounts" })
-        .catch(() => provider.request({ method: "eth_accounts" })) as Promise<
-        string[]
-      >;
-    });
+    let provider: EthereumProvider | undefined;
+
+    if (this.login) {
+      if (this.login.provider === "passwordless") {
+        if (this.login.email) {
+          provider = await this.auth.loginWithLink(this.login.email);
+        } else {
+          throw new Error("email is required for passwordless login");
+        }
+      } else {
+        provider = await this.auth.loginWithSocial(this.login.provider);
+      }
+    } else {
+      provider = await this.auth.connect();
+    }
+    // const provider =
+    // .then((provider: EthereumProvider) => {
+    provider
+      .request({ method: "eth_requestAccounts" })
+      .catch(() => provider?.request({ method: "eth_accounts" })) as Promise<
+      string[]
+    >;
+    // });
   }
 
   public async deactivate(): Promise<void> {
