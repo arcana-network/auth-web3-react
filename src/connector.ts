@@ -20,7 +20,8 @@ export class ArcanaConnector extends Connector {
   readonly name = "Arcana Auth";
   private auth: AuthProvider;
   private login?: LoginType;
-  public provider?: Provider;
+  public provider: Provider;
+  private attached = false;
 
   constructor(
     auth: AuthProvider,
@@ -30,10 +31,7 @@ export class ArcanaConnector extends Connector {
     this.auth = auth;
     this.provider = this.auth.provider;
     this.login = login;
-    this.provider.on("connect", this.connectListener);
-    this.provider.on("disconnect", this.disconnectListener);
-    this.provider.on("chainChanged", this.chainChangedListener);
-    // this.provider.on("accountsChanged", this.accountsChangedListener);
+    this.addListeners();
   }
 
   setLogin(login: LoginType) {
@@ -66,6 +64,7 @@ export class ArcanaConnector extends Connector {
   };
 
   public async connectEagerly(): Promise<void> {
+    this.addListeners();
     await this.auth.init();
     if (await this.auth.isLoggedIn()) {
       if (!this.auth.connected) {
@@ -77,9 +76,35 @@ export class ArcanaConnector extends Connector {
     return;
   }
 
-  async activate(): Promise<void> {
-    let provider: EthereumProvider | undefined;
+  private addListeners() {
+    if (!this.attached) {
+      this.attached = true;
+      this.provider.on("connect", this.connectListener);
+      this.provider.on("disconnect", this.disconnectListener);
+      this.provider.on("chainChanged", this.chainChangedListener);
+    }
+  }
+  private removeListeners() {
+    if (this.attached) {
+      this.provider.removeListener("connect", this.connectListener);
+      this.provider.removeListener("disconnect", this.disconnectListener);
+      this.provider.removeListener("chainChanged", this.chainChangedListener);
+      this.attached = false;
+    }
+  }
 
+  async activate(): Promise<void> {
+    this.addListeners();
+    let provider: EthereumProvider | undefined;
+    await this.auth.init();
+    if (await this.auth.isLoggedIn()) {
+      if (!this.auth.connected) {
+        await new Promise((resolve) =>
+          this.auth.provider.on("connect", resolve)
+        );
+      }
+      return;
+    }
     if (this.login) {
       if (this.login.provider === "passwordless") {
         if (this.login.email) {
@@ -105,13 +130,7 @@ export class ArcanaConnector extends Connector {
 
   public async deactivate(): Promise<void> {
     await this.auth.logout();
-    this.provider?.removeListener("disconnect", this.disconnectListener);
-    this.provider?.removeListener("chainChanged", this.chainChangedListener);
-    // this.provider?.removeListener(
-    //   "accountsChanged",
-    //   this.accountsChangedListener
-    // );
-    this.provider?.removeListener("connect", this.connectListener);
+    this.removeListeners();
     this.actions.resetState();
   }
 }
