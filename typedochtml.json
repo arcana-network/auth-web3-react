@@ -1,0 +1,25 @@
+{
+  "sidebarLinks": {
+        "Docs": "https://docs.arcana.network",
+  },
+  "entryPoints": ["src/index.ts"],
+  "entryPointStrategy": "expand",
+  "name": "Auth Web3-React SDK Reference",
+  "out": "htmldocs",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "gitRevision": "main",
+  "excludeInternal": true,
+  "includeVersion": true,
+  "footerDate": true,
+  "footerTime": true,
+  "hideGenerator": true,
+  "plugin": [
+    "typedoc-plugin-extras",
+    "typedoc-plugin-rename-defaults",
+    "typedoc-material-theme"
+  ],
+  "themeColor": "#ff4e9f",
+  "customFooterHtml": "<p> Copyright © <strong>Arcana Technologies Ltd. </strong>All rights reserved</p>",
+  "customCss": "./typedoc-theme/an_style.css"
+}

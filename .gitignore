@@ -3,5 +3,5 @@ dist/
 types/
 test/
 *.log
-
+htmldocs/
 .DS_Store
